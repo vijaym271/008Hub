@@ -1,6 +1,6 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
 
-part of 'login_service.dart';
+part of 'base_image_service.dart';
 
 // **************************************************************************
 // RetrofitGenerator
@@ -8,8 +8,8 @@ part of 'login_service.dart';
 
 // ignore_for_file: unnecessary_brace_in_string_interps,no_leading_underscores_for_local_identifiers
 
-class _LoginService implements LoginService {
-  _LoginService(
+class _BaseImageService implements BaseImageService {
+  _BaseImageService(
     this._dio, {
     this.baseUrl,
   });
@@ -18,14 +18,45 @@ class _LoginService implements LoginService {
 
   String? baseUrl;
 
+  List<Map<String, dynamic>> localData = [
+    {
+      "id": 1,
+      "baseImg": "assets/images/pongal_banner.jpeg",
+      "baseImgSample": "assets/images/pongal_banner_sample.jpeg",
+      "title": "Pongal banner",
+      "desc": "abc"
+    },
+    {
+      "id": 2,
+      "baseImg": "assets/images/divan_banner.jpeg",
+      "baseImgSample": "assets/images/divan_banner_sample.jpeg",
+      "title": "Divan banner",
+      "desc": "abc"
+    },
+    {
+      "id": 3,
+      "baseImg": "assets/images/divan1.jpeg",
+      "baseImgSample": "assets/images/divan1_sample.jpeg",
+      "title": "Divan1",
+      "desc": "abc"
+    },
+    {
+      "id": 3,
+      "baseImg": "assets/images/divan.jpeg",
+      "baseImgSample": "assets/images/divan_sample.jpeg",
+      "title": "Divan",
+      "desc": "abc"
+    }
+  ];
+
   @override
-  Future<HttpResponse<User>> login() async {
+  Future<HttpResponse<List<BaseImage>>> getAllBaseImages() async {
     final _extra = <String, dynamic>{};
     final queryParameters = <String, dynamic>{};
     final _headers = <String, dynamic>{};
-    const List<dynamic>? _data = null;
-    final _result = await _dio
-        .fetch<List<dynamic>>(_setStreamType<HttpResponse<User>>(Options(
+    const Map<String, dynamic>? _data = null;
+    final _result = await _dio.fetch<List<dynamic>>(
+        _setStreamType<HttpResponse<List<BaseImage>>>(Options(
       method: 'GET',
       headers: _headers,
       extra: _extra,
@@ -41,14 +72,12 @@ class _LoginService implements LoginService {
               _dio.options.baseUrl,
               baseUrl,
             ))));
-    // final value = User.fromJson(_result.data!);
-    final value = User.fromJson({
-      "id": 123,
-      "emailId": "abc@gmail.com",
-      "userName": "abc",
-      "phoneNo": 123456789,
-      "userRole": "superAdmin",
-    });
+    // var value = _result.data!
+    //     .map((dynamic i) => BaseImage.fromJson(i as Map<String, dynamic>))
+    //     .toList();
+    var value = localData
+        .map((dynamic i) => BaseImage.fromJson(i as Map<String, dynamic>))
+        .toList();
     final httpResponse = HttpResponse(value, _result);
     return httpResponse;
   }

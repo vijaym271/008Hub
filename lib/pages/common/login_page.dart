@@ -4,13 +4,12 @@ import 'package:hub008/blocs/common/login/login_bloc.dart';
 import 'package:hub008/blocs/common/login/login_event.dart';
 import 'package:hub008/blocs/common/login/login_state.dart';
 import 'package:hub008/config/constants.dart';
-import 'package:hub008/config/environment.dart';
-import 'package:hub008/enums/user_role.dart';
 import 'package:hub008/models/user.dart';
 import 'package:hub008/pages/admin/admin_home.dart';
 import 'package:hub008/pages/super_admin/super_admin_home.dart';
 import 'package:hub008/pages/user/user_home.dart';
 import 'package:hub008/utils/globals.dart';
+import 'package:hub008/utils/shared_pref_utils.dart';
 import 'package:hub008/widgets/app_loader.dart';
 import 'package:hub008/widgets/toaster.dart';
 
@@ -25,6 +24,32 @@ class _LoginPageState extends State<LoginPage> {
   GlobalKey<FormState> formKey = GlobalKey<FormState>();
   TextEditingController userNameController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _checkLoggedUser();
+  }
+
+  void _checkLoggedUser() async {
+    Map<String, dynamic> loggedUserJson =
+        await getFromPreference(Constants.loggedUser) ?? {};
+    if (loggedUserJson.isNotEmpty) {
+      User? loggedUser = User.fromJson(loggedUserJson);
+      _handleNavigation(loggedUser);
+    }
+  }
+
+  void _handleNavigation(User? loggedUser) {
+    Widget homePage = const UserHome();
+    if (loggedUser?.userRole == "superAdmin") {
+      homePage = const SuperAdminHome();
+    } else if (loggedUser?.userRole == "admin") {
+      homePage = const AdminHome();
+    }
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => homePage));
+  }
 
   void _handleLogin() {
     // if (formKey.currentState!.validate()) {
@@ -95,16 +120,5 @@ class _LoginPageState extends State<LoginPage> {
             return _renderLoginForm();
           }))),
     );
-  }
-
-  void _handleNavigation(User? loggedUser) {
-    Widget homePage = const UserHome();
-    if (loggedUser?.userRole == "superAdmin") {
-      homePage = const SuperAdminHome();
-    } else if (loggedUser?.userRole == "admin") {
-      homePage = const AdminHome();
-    }
-    Navigator.pushReplacement(
-        context, MaterialPageRoute(builder: (context) => homePage));
   }
 }
