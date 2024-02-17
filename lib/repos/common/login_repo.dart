@@ -23,6 +23,7 @@ class LoginRepo {
       }
     } on DioException catch (e) {
       print('i am error -->${e.error}');
+      print('i am error -->${e.message}');
       return DataFailed(e);
     }
   }

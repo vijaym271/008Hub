@@ -1,58 +1,75 @@
 import 'dart:async';
 import 'package:bloc/bloc.dart';
-import 'package:flutter/material.dart';
-import 'package:hub008/blocs/super_admin/base_image/base_image_event.dart';
-import 'package:hub008/blocs/super_admin/base_image/base_image_state.dart';
+import 'package:dio/dio.dart';
+import 'package:equatable/equatable.dart';
 import 'package:hub008/core/data_state.dart';
+import 'package:hub008/models/base_image.dart';
 import 'package:hub008/models/content.dart';
 import 'package:hub008/repos/super_admin/base_image_repo.dart';
+part 'base_image_event.dart';
+part 'base_image_state.dart';
 
 class BaseImageBloc extends Bloc<BaseImageEvent, BaseImageState> {
   final BaseImageRepo _baseImageRepo;
-  BaseImageBloc(this._baseImageRepo) : super(const BaseImageLoading()) {
+  BaseImageBloc(this._baseImageRepo) : super(const BaseImageState()) {
     on<GetAllBaseImages>(onGetAllBaseImages);
     on<SelectBaseImage>(onSelectBaseImage);
     on<AddContent>(onAddContent);
-    on<UpdateContentPosition>(onUpdateContentPosition);
+    on<UpdateContent>(onUpdateContent);
+    on<UpdateAllContent>(onUpdateAllContent);
   }
+
+  // @override
+  // void onTransition(Transition<BaseImageEvent, BaseImageState> transition) {
+  //   super.onTransition(transition);
+  //   print('i am Auth Transition -->$transition');
+  // }
 
   FutureOr<void> onGetAllBaseImages(
       GetAllBaseImages event, Emitter<BaseImageState> emit) async {
-    emit(const BaseImageLoading());
+    emit(state.copyWith(isLoading: true, isInitial: false, contents: []));
     final dataState = await _baseImageRepo.getAllBaseImages();
     if (dataState is DataSuccess) {
-      emit(BaseImageDone(dataState.data!));
+      emit(state.copyWith(isLoading: false, baseImages: dataState.data!));
     }
     if (dataState is DataFailed) {
-      emit(BaseImageError(dataState.error!));
+      emit(state.copyWith(isError: dataState.error!));
     }
   }
 
-  void onSelectBaseImage(SelectBaseImage event, Emitter<BaseImageState> emit) {
+  FutureOr<void> onSelectBaseImage(
+      SelectBaseImage event, Emitter<BaseImageState> emit) {
     if (event.selectedBaseImg.baseImg.isNotEmpty) {
-      emit(BaseImageSelected(event.selectedBaseImg));
+      emit(
+          state.copyWith(selectedBaseImg: event.selectedBaseImg, contents: []));
     } else {
-      emit(const BaseImageSelected(null));
+      emit(state.copyWith(selectedBaseImg: null));
     }
   }
 
-  void onAddContent(AddContent event, Emitter<BaseImageState> emit) {
-    List<Content> contents = state.contents ?? [];
-    contents.add(event.content);
-    emit(ContentAdded(state.selectedBaseImg, contents));
+  FutureOr<void> onAddContent(AddContent event, Emitter<BaseImageState> emit) {
+    emit(state.copyWith(contents: [...state.contents, event.content]));
   }
 
-  void onUpdateContentPosition(
-      UpdateContentPosition event, Emitter<BaseImageState> emit) {
-    List<Content> contents = state.contents ?? [];
-    int index = contents.indexWhere((e) => e.id == event.id);
-    Offset position = event.offset;
-    contents[index].top = position.dy.floorToDouble();
-    // contents[index].right = position.dx.floorToDouble() + event.imgSize.width;
-    // contents[index].bottom = position.dy.floorToDouble() + event.imgSize.height;
-    contents[index].left = position.dx.floorToDouble();
-    print('i am rop -->${contents[index].top}');
-    print('i am left -->${contents[index].left}');
-    emit(ContentAdded(state.selectedBaseImg, contents));
+  FutureOr<void> onUpdateContent(
+      UpdateContent event, Emitter<BaseImageState> emit) {
+    emit(state.copyWith(isLoading: true));
+    List<Content> contents = [...state.contents];
+    int index = contents.indexWhere((e) => e.id == event.content.id);
+    contents[index] = event.content;
+    emit(state.copyWith(isLoading: false, contents: contents));
+  }
+
+  FutureOr<void> onUpdateAllContent(
+      UpdateAllContent event, Emitter<BaseImageState> emit) {
+    emit(state.copyWith(isLoading: true));
+    List<Content> contents = [...state.contents];
+    if (event.clearAllFocus == true) {
+      contents = contents.map((e) {
+        e.isTextEdit = false;
+        return e;
+      }).toList();
+    }
+    emit(state.copyWith(isLoading: false, contents: contents));
   }
 }

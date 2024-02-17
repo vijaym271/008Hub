@@ -1,15 +1,15 @@
 import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hub008/blocs/super_admin/base_image/base_image_bloc.dart';
-import 'package:hub008/blocs/super_admin/base_image/base_image_event.dart';
-import 'package:hub008/blocs/super_admin/base_image/base_image_state.dart';
 import 'package:hub008/config/constants.dart';
 import 'package:hub008/models/base_image.dart';
 import 'package:hub008/models/content.dart';
 import 'package:hub008/pages/super_admin/base_image_page.dart';
+import 'package:hub008/widgets/app_dialog.dart';
+import 'package:hub008/widgets/app_loader.dart';
 import 'package:hub008/widgets/design_img.dart';
+import 'package:hub008/widgets/poc.dart';
 
 class DesignPage extends StatefulWidget {
   const DesignPage({super.key});
@@ -21,15 +21,51 @@ class DesignPage extends StatefulWidget {
 class _DesignPageState extends State<DesignPage> {
   bool isExpanded = false;
 
-  Widget _renderBrowseBtn() {
-    return Center(
-      child: ElevatedButton(
-          onPressed: () {
+  void alertDialog() {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Alert'),
+            content: const Text('Current changes will be discard'),
+            actions: [
+              TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel')),
+              TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (context) => const BaseImagePage()));
+                  },
+                  child: const Text('Ok'))
+            ],
+          );
+        });
+  }
+
+  Widget _renderBrowseBtn(BaseImageState state) {
+    return ElevatedButton(
+        onPressed: () {
+          if (state.contents.isNotEmpty) {
+            alertDialog();
+          } else {
             Navigator.push(context,
                 MaterialPageRoute(builder: (context) => const BaseImagePage()));
-          },
-          child: const Text(Constants.browseImg)),
-    );
+          }
+        },
+        child: const Text(Constants.browseImg));
+  }
+
+  Widget _renderSaveBtn() {
+    return ElevatedButton(
+        onPressed: () {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const BaseImagePage()));
+        },
+        child: const Text(Constants.saveImage));
   }
 
   // Widget _renderSampleImg(BaseImage imageData) {
@@ -47,13 +83,17 @@ class _DesignPageState extends State<DesignPage> {
   //   );
   // }
 
-  Widget _renderSelectedImg(BaseImage imageData) {
+  Widget _renderSelectedImg(BaseImage imageData, BaseImageState state) {
     return Column(
       children: [
         const DesignImage(),
+        const SizedBox(height: 6.0),
         Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [_renderBrowseBtn()],
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _renderSaveBtn(),
+            _renderBrowseBtn(state),
+          ],
         )
       ],
     );
@@ -107,30 +147,27 @@ class _DesignPageState extends State<DesignPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text(Constants.designPage)),
+      appBar: AppBar(
+        title: const Text(Constants.designPage),
+      ),
       body: BlocBuilder<BaseImageBloc, BaseImageState>(
         builder: (context, state) {
-          if ((state is BaseImageSelected &&
-                  state.selectedBaseImg!.baseImg.isNotEmpty) ||
-              state is ContentAdded) {
+          if (state.isLoading == true) return const AppLoader();
+          if (state.selectedBaseImg != null) {
             BaseImage imageData = state.selectedBaseImg!;
             return SingleChildScrollView(
               child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: _renderSelectedImg(imageData)),
+                  child: _renderSelectedImg(imageData, state)),
             );
           }
-          return _renderBrowseBtn();
+          return Center(child: _renderBrowseBtn(state));
         },
       ),
       floatingActionButton: BlocBuilder<BaseImageBloc, BaseImageState>(
         builder: (context, state) {
-          if ((state is BaseImageSelected &&
-                  state.selectedBaseImg!.baseImg.isNotEmpty) ||
-              state is ContentAdded) {
-            return _renderFloatingBtn();
-          }
-          return const SizedBox();
+          if (state.selectedBaseImg != null) return _renderFloatingBtn();
+          return const SizedBox.shrink();
         },
       ),
     );

@@ -8,6 +8,7 @@ import 'package:hub008/models/user.dart';
 import 'package:hub008/pages/admin/admin_home.dart';
 import 'package:hub008/pages/super_admin/super_admin_home.dart';
 import 'package:hub008/pages/user/user_home.dart';
+import 'package:hub008/utils/common_utils.dart';
 import 'package:hub008/utils/globals.dart';
 import 'package:hub008/utils/shared_pref_utils.dart';
 import 'package:hub008/widgets/app_loader.dart';
@@ -90,7 +91,7 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 32.0),
             SizedBox(
-                width: deviceWidth * 0.8,
+                width: 150,
                 child: ElevatedButton(
                     onPressed: _handleLogin,
                     child: const Text(Constants.login)))
@@ -100,6 +101,7 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    setDeviceDimensions(context);
     return Scaffold(
       appBar: AppBar(title: const Text(Constants.login)),
       body: Container(

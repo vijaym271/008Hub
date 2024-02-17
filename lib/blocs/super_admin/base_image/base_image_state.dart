@@ -1,39 +1,38 @@
-import 'package:dio/dio.dart';
-import 'package:equatable/equatable.dart';
-import 'package:hub008/models/base_image.dart';
-import 'package:hub008/models/content.dart';
+part of 'base_image_bloc.dart';
 
-abstract class BaseImageState extends Equatable {
+class BaseImageState extends Equatable {
+  final bool? isInitial;
+  final bool? isLoading;
   final List<BaseImage>? baseImages;
   final BaseImage? selectedBaseImg;
-  final List<Content>? contents;
-  final DioException? error;
+  final List<Content> contents;
+  final DioException? isError;
   const BaseImageState(
-      {this.baseImages, this.selectedBaseImg, this.contents, this.error});
+      {this.isInitial = true,
+      this.isLoading,
+      this.baseImages,
+      this.selectedBaseImg,
+      this.contents = const [],
+      this.isError});
+
+  BaseImageState copyWith(
+      {bool? isInitial,
+      bool? isLoading,
+      List<BaseImage>? baseImages,
+      BaseImage? selectedBaseImg,
+      List<Content>? contents,
+      DioException? isError}) {
+    return BaseImageState(
+      isInitial: isInitial ?? this.isInitial,
+      isLoading: isLoading ?? this.isLoading,
+      baseImages: baseImages ?? this.baseImages,
+      selectedBaseImg: selectedBaseImg ?? this.selectedBaseImg,
+      contents: contents ?? this.contents,
+      isError: isError ?? this.isError,
+    );
+  }
 
   @override
-  List<Object?> get props => [baseImages, selectedBaseImg, contents, error];
-}
-
-class BaseImageLoading extends BaseImageState {
-  const BaseImageLoading();
-}
-
-class BaseImageDone extends BaseImageState {
-  const BaseImageDone(List<BaseImage> baseImages)
-      : super(baseImages: baseImages);
-}
-
-class BaseImageSelected extends BaseImageState {
-  const BaseImageSelected(BaseImage? selectedBaseImg)
-      : super(selectedBaseImg: selectedBaseImg);
-}
-
-class ContentAdded extends BaseImageState {
-  const ContentAdded(BaseImage? selectedBaseImg, List<Content>? contents)
-      : super(selectedBaseImg: selectedBaseImg, contents: contents);
-}
-
-class BaseImageError extends BaseImageState {
-  const BaseImageError(DioException error) : super(error: error);
+  List<Object?> get props =>
+      [isLoading, baseImages, selectedBaseImg, contents, isError];
 }

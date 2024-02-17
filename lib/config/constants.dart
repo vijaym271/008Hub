@@ -11,6 +11,7 @@ class Constants {
   static const logout = 'Log Out';
   static const home = 'Home';
   static const browseImg = 'Browse Image';
+  static const saveImage = 'Save Image';
   static const insertText = 'Insert Text';
   static const insertImage = 'Insert Image';
 
