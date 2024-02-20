@@ -89,12 +89,16 @@ class _DesignImageState extends State<DesignImage> {
     double left = data.left;
     double width = data.width;
     double height = data.height;
+    print('i am 0000 -->${data.top} --${data.left}');
+    print('i am 111 -->${data.width} --${data.height}');
     double x = (details.delta.dx + convertToPr(left, imgWidth))
         .clamp(0.0, imgWidth - (width * imgWidth));
     double y = (details.delta.dy + convertToPr(top, imgHeight))
         .clamp(0.0, imgHeight - (height * imgHeight));
+    print('i am xy -->$x --$y');
     data.top = convertToPt(y, imgHeight);
     data.left = convertToPt(x, imgWidth);
+    print('i am top left -->${data.top} --${data.left}');
     context.read<BaseImageBloc>().add(UpdateContent(content: data));
   }
 
