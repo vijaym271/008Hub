@@ -1,7 +1,6 @@
 import 'package:drag_drop/pages/base_image_edit/base_image_utils.dart';
 import 'package:drag_drop/pages/base_image_edit/content.dart';
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 // class ChildBaseContent extends StatelessWidget {
 //   const ChildBaseContent(
@@ -20,12 +19,14 @@ class BaseImageContent extends StatefulWidget {
       {super.key,
       this.imgSize,
       required this.content,
+      required this.enableDrag,
       required this.selectedId,
       required this.onSelectItemChanged,
       required this.onContentChanged});
   final Size? imgSize;
   final Content content;
   final int? selectedId;
+  final bool enableDrag;
   final ValueChanged<int> onSelectItemChanged;
   final ValueChanged<Content> onContentChanged;
 
@@ -42,23 +43,29 @@ class BaseImageContent extends StatefulWidget {
 }
 
 class _BaseImageContentState extends State<BaseImageContent> {
-  TextEditingController textEditingController = TextEditingController();
   final GlobalKey _textKey = GlobalKey();
   late Size _imgSize;
   late Content content;
   late int? _selectedId;
+  late bool _enableDrag;
   double? textWidth;
   double? textHeight;
+  FocusNode textNode = FocusNode();
+
+  @override
+  void didUpdateWidget(covariant BaseImageContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    textNode.requestFocus();
+  }
 
   void _initMethod() {
     content = widget.content;
-    textEditingController.text = content.text!;
     _imgSize = widget.imgSize!;
     _selectedId = widget.selectedId;
+    _enableDrag = widget.enableDrag;
   }
 
   Widget _renderOnlyText(TextStyle textStyle) {
-    print('i am _selectedId -->${_selectedId} -- ${content.id}');
     return Container(
         // width: textWidth != null
         //     ? convertToPr(textWidth!, _imgSize.width)
@@ -101,26 +108,23 @@ class _BaseImageContentState extends State<BaseImageContent> {
         border: InputBorder.none,
         contentPadding: EdgeInsets.zero,
         isDense: true);
-    FocusNode textNode = FocusNode();
-    if (content.isInputSelect) textNode.requestFocus();
     return Container(
         width: convertToPr(textWidth!, _imgSize.width) * 1.1,
         height: convertToPr(textHeight!, _imgSize.height),
         // color: Colors.blue,
         child: TextFormField(
-          controller: textEditingController,
+          initialValue: content.text,
           style: textStyle,
           decoration: textDecoration,
-          focusNode: content.isInputSelect ? textNode : null,
+          focusNode: content.isInputSelect! ? textNode : null,
           onChanged: (value) {
             content.text = value;
             widget.onContentChanged(content);
-            // setState(() {});
           },
         ));
   }
 
-  Widget _renderTextContext() {
+  Widget _renderTextContent() {
     TextStyle textStyle = TextStyle(
         fontFamily: content.fontFamily,
         height: 1,
@@ -129,19 +133,19 @@ class _BaseImageContentState extends State<BaseImageContent> {
     return Column(
       children: [
         Visibility(
-            visible: !content.isInputSelect,
+            visible: !content.isInputSelect!,
             maintainState: true,
             child: _renderOnlyText(textStyle)),
         if (textWidth != null && textHeight != null)
           Visibility(
-              visible: content.isInputSelect,
+              visible: content.isInputSelect!,
               child: _renderTextInput(textStyle))
       ],
     );
   }
 
   Widget _renderContent() {
-    return _renderTextContext();
+    return _renderTextContent();
   }
 
   void _handleTap() {
@@ -153,11 +157,7 @@ class _BaseImageContentState extends State<BaseImageContent> {
     // print('i am 1111 ->${textHeight} -->${textWidth}');
     // print('i am 2222 ->${_imgSize.height} -->${_imgSize.width}');
     // print('i am 3333 ->${details.delta.dy} -->${details.delta.dx}');
-    if (textWidth != null && textHeight != null) {
-      //rotate
-      // content.rotateAngle = details.localPosition.direction * 360 / pi;
-      print('i am _rotateAngle -->${content.rotateAngle}');
-      // position
+    if ((textWidth != null && textHeight != null) && _enableDrag) {
       double x = (details.delta.dx + convertToPr(content.left!, _imgSize.width))
           .clamp(0.0, _imgSize.width - (textWidth! * _imgSize.width));
       double y = (details.delta.dy + convertToPr(content.top!, _imgSize.height))
@@ -171,12 +171,10 @@ class _BaseImageContentState extends State<BaseImageContent> {
   @override
   Widget build(BuildContext context) {
     _initMethod();
+    print('i am child -->$content');
     return GestureDetector(
         onTap: _handleTap,
         onPanUpdate: _handlePanUpdate,
-        child: Transform.rotate(
-            // angle: content.rotateAngle!,
-            angle: content.rotateAngle! * 360 * 3.14159 / 180,
-            child: _renderContent()));
+        child: _renderContent());
   }
 }

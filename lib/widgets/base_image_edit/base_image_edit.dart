@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math';
 import 'package:drag_drop/pages/base_image_edit/base_image_content.dart';
 import 'package:drag_drop/pages/base_image_edit/content.dart';
@@ -7,18 +8,29 @@ import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'package:screenshot/screenshot.dart';
 
 class BaseImageEdit extends StatefulWidget {
-  const BaseImageEdit({
-    super.key,
-    required this.baseBgImage,
-    this.contents = const <Content>[],
-    this.isNetworkImage = false,
-    this.isEditable = true,
-  });
+  const BaseImageEdit(
+      {super.key,
+      required this.baseBgImage,
+      this.contents = const <Content>[],
+      this.enableDrag = false,
+      this.isNetworkImage = false,
+      this.enableEdit = false,
+      this.enableRotate = false,
+      this.showAddBtn = false,
+      this.showExportBtn = false,
+      this.showSaveBtn = false,
+      this.onSaved});
 
   final String baseBgImage;
   final List<Content> contents;
+  final bool enableDrag;
   final bool isNetworkImage;
-  final bool isEditable;
+  final bool enableEdit;
+  final bool enableRotate;
+  final bool showAddBtn;
+  final bool showExportBtn;
+  final bool showSaveBtn;
+  final ValueChanged<Map<String, dynamic>>? onSaved;
 
   @override
   State<BaseImageEdit> createState() => _BaseImageEditState();
@@ -26,21 +38,46 @@ class BaseImageEdit extends StatefulWidget {
 
 class _BaseImageEditState extends State<BaseImageEdit> {
   late String _baseBgImage;
-  late List<Content> contents;
-  late bool _isEditable;
+  late List<Content> _contents;
+  late bool _enableEdit;
+  late bool _enableDrag;
+  late bool _enableRotate;
+  late bool _showAddBtn;
+  late bool _showExportBtn;
+  late bool _showSaveBtn;
   Size imgSize = const Size(0.0, 0.0);
   final _baseImgKey = GlobalKey();
   final _screenshotController = ScreenshotController();
-  double rotateAngle = 0.0;
+  double rotateAngle = 0.0.toDouble();
   int? selectedId;
   int? selectedInputId;
+  List<Content> deepCloneContent = [];
 
   @override
   void initState() {
     super.initState();
+    deepCloneContent =
+        widget.contents.map((content) => content.clone()).toList();
+  }
+
+  void _initMethod() {
     _baseBgImage = widget.baseBgImage;
-    contents = List.from(widget.contents);
-    _isEditable = widget.isEditable;
+    _contents = widget.contents;
+    _enableEdit = widget.enableEdit;
+    _enableDrag = widget.enableDrag;
+    _enableRotate = widget.enableRotate;
+    _showAddBtn = widget.showAddBtn;
+    _showExportBtn = widget.showExportBtn;
+    _showSaveBtn = widget.showSaveBtn;
+    //replace same text with it is empty
+    if (_contents.any((e) => e.text!.isEmpty)) {
+      bool isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+      if (!isKeyboardVisible) {
+        int index = _contents.indexWhere((item) =>
+            item.id == _contents.firstWhere((e) => e.text!.isEmpty).id);
+        _contents[index].text = deepCloneContent[index].text;
+      }
+    }
   }
 
   void _getWidgetDimensions() {
@@ -86,14 +123,14 @@ class _BaseImageEditState extends State<BaseImageEdit> {
   }
 
   void _handleContentChange(Content updatedContent) {
-    int index = contents.indexWhere((e) => e.id == updatedContent.id);
-    contents[index] = updatedContent;
+    int index = _contents.indexWhere((e) => e.id == updatedContent.id);
+    _contents[index] = updatedContent;
     setState(() {});
   }
 
   void _clearAllFocus() {
     FocusScope.of(context).requestFocus(FocusNode());
-    contents = contents.map((e) {
+    _contents = _contents.map((e) {
       e.isSelect = false;
       e.isInputSelect = false;
       return e;
@@ -103,7 +140,7 @@ class _BaseImageEditState extends State<BaseImageEdit> {
   }
 
   void _handleSelectItemChanged(int id) {
-    contents = contents.map((e) {
+    _contents = _contents.map((e) {
       if ((selectedId == id) && (e.id == id)) {
         e.isInputSelect = true;
       } else {
@@ -115,72 +152,104 @@ class _BaseImageEditState extends State<BaseImageEdit> {
     setState(() {});
   }
 
+  List<Positioned> _renderContents() {
+    return _contents
+        .map((e) => Positioned(
+              key: Key(e.id.toString()),
+              top: e.top! * imgSize.height,
+              left: e.left! * imgSize.width,
+              child: RotationTransition(
+                turns: AlwaysStoppedAnimation(e.rotateAngle!),
+                child: Column(
+                  children: [
+                    BaseImageContent(
+                      content: e,
+                      imgSize: imgSize,
+                      enableDrag: _enableDrag,
+                      selectedId: selectedId,
+                      onSelectItemChanged: _handleSelectItemChanged,
+                      onContentChanged: _handleContentChange,
+                    ),
+                    Visibility(
+                      visible: (selectedId == e.id) && _enableRotate,
+                      child: GestureDetector(
+                          onPanUpdate: (details) {
+                            e.rotateAngle =
+                                e.rotateAngle! - details.delta.dx / 180;
+                            setState(() {});
+                          },
+                          child: const Icon(Icons.rotate_right)),
+                    )
+                  ],
+                ),
+              ),
+            ))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('i am parent -->');
+    _initMethod();
     return Column(
       children: [
         Screenshot(
             controller: _screenshotController,
             child: AbsorbPointer(
-              absorbing: !_isEditable,
+              absorbing: !_enableEdit,
               child: GestureDetector(
                 onTap: _clearAllFocus,
                 child: Stack(
                   children: [
                     _renderImagePicker(),
-                    if (contents.isNotEmpty)
-                      ...contents.map((e) => Positioned(
-                            top: e.top! * imgSize.height,
-                            left: e.left! * imgSize.width,
-                            child: BaseImageContent(
-                              content: e,
-                              imgSize: imgSize,
-                              selectedId: selectedId,
-                              onSelectItemChanged: _handleSelectItemChanged,
-                              onContentChanged: _handleContentChange,
-                            ),
-                          )),
+                    if (_contents.isNotEmpty) ..._renderContents()
                   ],
                 ),
               ),
             )),
         const SizedBox(height: 10.0),
-        Row(
+        Wrap(
+          spacing: 10.0,
+          runSpacing: 5.0,
           children: [
-            Expanded(
-              child: ElevatedButton(
-                  onPressed: () {
-                    Map<String, dynamic> data = {
-                      "baseBgImage": _baseBgImage,
-                      "contents": [
-                        ...contents.map((e) =>
-                            {"text": e.text, "top": e.top, "left": e.left})
-                      ]
-                    };
-                    print('export json -->${data}');
-                  },
-                  child: const Text('Save')),
-            ),
-            const SizedBox(width: 10.0),
-            Expanded(
-              child: ElevatedButton(
-                  onPressed: _captureAndSaveScreenshot,
-                  child: const Text('Export')),
-            ),
-            const SizedBox(width: 10.0),
-            Expanded(
-              child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      Random random = Random();
-                      int id = random.nextInt(900000) + 100000;
-                      contents.add(
-                        Content(id: id, text: "Text"),
-                      );
-                    });
-                  },
-                  child: const Text('Add')),
-            ),
+            if (_showSaveBtn)
+              SizedBox(
+                width: 100,
+                child: ElevatedButton(
+                    onPressed: () {
+                      Map<String, dynamic> data = {
+                        "baseBgImage": _baseBgImage,
+                        "contents": _contents
+                            .map((e) => jsonEncode(e.toJson()))
+                            .toList()
+                      };
+                      print('export json -->${data}');
+                      if (widget.onSaved != null) widget.onSaved!(data);
+                    },
+                    child: const Text('Save')),
+              ),
+            if (_showExportBtn)
+              SizedBox(
+                width: 100,
+                child: ElevatedButton(
+                    onPressed: _captureAndSaveScreenshot,
+                    child: const Text('Export')),
+              ),
+            if (_showAddBtn)
+              SizedBox(
+                width: 100,
+                child: ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        Random random = Random();
+                        int id = random.nextInt(900000) + 100000;
+                        _contents.add(
+                          Content(id: id, text: "Text"),
+                        );
+                      });
+                    },
+                    child: const Text('Add')),
+              ),
           ],
         )
       ],

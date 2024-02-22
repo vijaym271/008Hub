@@ -33,8 +33,8 @@ class Content {
   bool? isTextEdit;
   double? width;
   double? height;
-  late bool isSelect;
-  late bool isInputSelect;
+  bool? isSelect;
+  bool? isInputSelect;
 
   Content.fromJson(Map<String, dynamic> json) {
     id = json['id'];
@@ -44,14 +44,16 @@ class Content {
     fontFamily = json['fontFamily'];
     fontSize = json['fontSize'];
     textColor = json['textColor'];
-    rotateAngle = json['rotateAngle'];
+    rotateAngle = double.parse(json['rotateAngle'].toString());
     isText = json['isText'];
     logoImg = json['logoImg'];
     logoWidth = json['logoWidth'];
     logoHeight = json['logoHeight'];
-    isTextEdit = json['isTextEdit'];
+    isTextEdit = json['isTextEdit'] ?? false;
     width = json['width'];
     height = json['height'];
+    isSelect = json['isSelect'] ?? false;
+    isInputSelect = json['isInputSelect'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
@@ -68,9 +70,30 @@ class Content {
     data['logoImg'] = logoImg;
     data['logoWidth'] = logoWidth;
     data['logoHeight'] = logoHeight;
-    data['isTextEdit'] = isTextEdit;
     data['width'] = width;
     data['height'] = height;
     return data;
+  }
+
+  Content clone() {
+    return Content(
+      id: id,
+      text: text,
+      top: top,
+      left: left,
+      fontFamily: fontFamily,
+      fontSize: fontSize,
+      textColor: textColor,
+      rotateAngle: rotateAngle,
+      isText: isText,
+      logoImg: logoImg,
+      logoWidth: logoWidth,
+      logoHeight: logoWidth,
+      isTextEdit: isTextEdit,
+      width: width,
+      height: height,
+      isSelect: isSelect,
+      isInputSelect: isInputSelect,
+    );
   }
 }
